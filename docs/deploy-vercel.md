@@ -4,13 +4,9 @@ This is how the public instance at clouddsp.ca runs. To run cloudDSP on your
 own machine or server instead, see [self-hosting.md](self-hosting.md). Any
 S3-compatible storage works in place of R2 (see the `S3_*` settings there).
 
-```
-Browser ──presigned PUT/GET──▶ Cloudflare R2 ◀──presigned GET/PUT── GPU workers (home, outbound only)
-   │                                                                    │
-   └────────── jobs, status ──────▶ Vercel (Next.js) ◀── claim, progress ┘
-                                        │
-                                  Prisma Postgres
-```
+<p align="center">
+  <img src="architecture-vercel.svg" alt="cloudDSP on Vercel: the browser and home GPU workers exchange files with Cloudflare R2 through presigned URLs and talk to the Next.js app on Vercel, which keeps the job queue in Prisma Postgres" width="820">
+</p>
 
 Audio never passes through Vercel: the browser and the workers move files
 straight to and from R2 with short-lived signed URLs. Vercel only hands out

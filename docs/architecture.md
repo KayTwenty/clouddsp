@@ -1,12 +1,8 @@
 # How cloudDSP works
 
-```
-Browser ──signed PUT / GET──▶ storage ◀──signed GET / PUT── GPU worker(s)
-   │                                                          │
-   └──── /api/jobs, live polling ──▶ website ◀── /api/worker/* ┘
-                                       │
-                                  job queue
-```
+<p align="center">
+  <img src="architecture.svg" alt="cloudDSP architecture: the browser and GPU workers exchange files through signed storage URLs and talk to the website, which keeps the job queue" width="820">
+</p>
 
 ## The pieces
 

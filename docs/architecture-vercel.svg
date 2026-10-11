@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480" role="img" aria-labelledby="title desc">
+  <title id="title">cloudDSP on Vercel</title>
+  <desc id="desc">The browser and the GPU workers move files straight to and from Cloudflare R2 with presigned URLs. Both talk to the Next.js app on Vercel, which keeps the job queue in Prisma Postgres. Workers only make outbound requests.</desc>
+  <style>
+    .bg { fill: #ffffff; }
+    .box { fill: #f6f6f8; stroke: #d4d4da; stroke-width: 1.5; }
+    .hub { fill: #fff4ec; stroke: #ff6a1a; stroke-width: 2; }
+    .gpu { stroke: #1aa7e0; stroke-width: 2; }
+    .title { fill: #111114; font: 600 20px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .sub { fill: #5c5c66; font: 14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .label { fill: #33333a; font: 500 14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .note { fill: #5c5c66; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .line { fill: none; stroke: #8b8b96; stroke-width: 2; }
+    .head { fill: #8b8b96; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0a0a0c; }
+      .box { fill: #131317; stroke: #2a2a32; }
+      .hub { fill: #1f140d; }
+      .gpu { stroke: #2ec4ff; }
+      .title { fill: #ededf0; }
+      .sub, .note { fill: #8b8b96; }
+      .label { fill: #c8c8d0; }
+      .line { stroke: #5a5a66; }
+      .head { fill: #5a5a66; }
+    }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path class="head" d="M0 0 L10 5 L0 10 z" />
+    </marker>
+  </defs>
+
+  <rect class="bg" width="960" height="480" rx="16" />
+
+  <!-- Connections -->
+  <path class="line" d="M242 108 H378" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+  <text class="label" x="310" y="96" text-anchor="middle">upload, play</text>
+  <text class="note" x="310" y="130" text-anchor="middle">presigned URLs</text>
+
+  <path class="line" d="M582 108 H718" marker-start="url(#arrow)" marker-end="url(#arrow)" />
+  <text class="label" x="650" y="96" text-anchor="middle">fetch track</text>
+  <text class="label" x="650" y="130" text-anchor="middle">save stems</text>
+
+  <path class="line" d="M140 158 V298 H378" marker-end="url(#arrow)" />
+  <text class="label" x="262" y="286" text-anchor="middle">create jobs, live status</text>
+  <text class="note" x="262" y="318" text-anchor="middle">/api/jobs</text>
+
+  <path class="line" d="M820 158 V298 H582" marker-end="url(#arrow)" />
+  <text class="label" x="700" y="286" text-anchor="middle">claim, progress</text>
+  <text class="note" x="700" y="318" text-anchor="middle">/api/worker/*</text>
+
+  <path class="line" d="M480 346 V384" marker-end="url(#arrow)" />
+
+  <!-- Boxes -->
+  <rect class="box" x="40" y="60" width="200" height="96" rx="12" />
+  <text class="title" x="140" y="102" text-anchor="middle">Browser</text>
+  <text class="sub" x="140" y="126" text-anchor="middle">upload, live view, player</text>
+
+  <rect class="box" x="380" y="60" width="200" height="96" rx="12" />
+  <text class="title" x="480" y="102" text-anchor="middle">Cloudflare R2</text>
+  <text class="sub" x="480" y="126" text-anchor="middle">private bucket</text>
+
+  <rect class="box gpu" x="720" y="60" width="200" height="96" rx="12" />
+  <text class="title" x="820" y="102" text-anchor="middle">GPU worker(s)</text>
+  <text class="sub" x="820" y="126" text-anchor="middle">home, outbound only</text>
+
+  <rect class="hub" x="380" y="250" width="200" height="96" rx="12" />
+  <text class="title" x="480" y="292" text-anchor="middle">Vercel</text>
+  <text class="sub" x="480" y="316" text-anchor="middle">Next.js app and API</text>
+
+  <rect class="box" x="380" y="386" width="200" height="64" rx="12" />
+  <text class="title" x="480" y="414" text-anchor="middle" style="font-size:17px">Prisma Postgres</text>
+  <text class="sub" x="480" y="436" text-anchor="middle" style="font-size:13px">job queue</text>
+</svg>

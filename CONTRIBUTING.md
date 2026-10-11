@@ -26,7 +26,7 @@ No accounts or configuration are needed for development; see
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run build
 ```
 

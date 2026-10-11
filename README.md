@@ -1,5 +1,14 @@
 # cloudDSP
 
+[![Vercel](https://img.shields.io/github/deployments/KayTwenty/clouddsp/Production?logo=vercel&label=vercel)](https://www.clouddsp.ca)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fwww.clouddsp.ca&label=clouddsp.ca)](https://www.clouddsp.ca)
+[![CI](https://github.com/KayTwenty/clouddsp/actions/workflows/ci.yml/badge.svg)](https://github.com/KayTwenty/clouddsp/actions/workflows/ci.yml)
+[![License: AGPL v3](https://img.shields.io/github/license/KayTwenty/clouddsp)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3776AB?logo=python&logoColor=white)](worker/pyproject.toml)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.11-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![Last commit](https://img.shields.io/github/last-commit/KayTwenty/clouddsp)](https://github.com/KayTwenty/clouddsp/commits/main)
+
 Free, open source stem separation for DJs. Upload tracks and get vocals,
 drums, bass and melody stems back, ready for your decks:
 
@@ -45,13 +54,9 @@ over HTTPS. See [docs/deploy-vercel.md](docs/deploy-vercel.md).
 
 ## How it works
 
-```
-Browser ──upload──▶ storage ◀──fetch / save── GPU worker(s)
-   │                                              │
-   └── jobs, live status ──▶ website ◀── claim, progress
-                               │
-                          job queue
-```
+<p align="center">
+  <img src="docs/architecture.svg" alt="cloudDSP architecture: the browser and GPU workers exchange files through signed storage URLs and talk to the website, which keeps the job queue" width="820">
+</p>
 
 Workers only make outgoing requests, so a GPU can sit anywhere: the same
 machine, a home server or a rented cloud GPU. Storage and the queue each have a
@@ -79,7 +84,7 @@ npm run dev      # website on http://localhost:3000
 npm run worker   # GPU worker, in a second terminal
 ```
 
-`npm run lint` and `npx tsc --noEmit` check the code. Contributions are welcome,
+`npm run lint` and `npm run typecheck` check the code. Contributions are welcome,
 see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
