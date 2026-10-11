@@ -1,0 +1,39 @@
+// cloudDSP job queue. Run `npx prisma generate` after changing this file and
+// `npx prisma migrate dev` to create a migration.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// One track going through the GPU pipeline. Files live in R2 (or local disk in
+// dev); this row tracks where they are and how far along the job is.
+model Job {
+  id         String    @id @default(uuid()) @db.Uuid
+  filename   String
+  size       Int
+  deviceId   String
+  output     String // "mod" | "tracks"
+  modFormat  String? // "cdj3k"
+  preset     String // "fast" | "balanced" | "quality"
+  format     String // "wav" | "flac" | "mp3"
+  status     String    @default("awaiting_upload") // awaiting_upload | queued | processing | done | failed
+  stage      String?
+  percent    Int?
+  error      String?
+  notes      String[]
+  inputKey   String
+  outputs    Json      @default("[]") // JobOutput[]
+  preview    Json? // JobPreview
+  live       Json? // JobLive, only while processing
+  leaseUntil DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Workers look up the oldest claimable job.
+  @@index([status, createdAt])
+}

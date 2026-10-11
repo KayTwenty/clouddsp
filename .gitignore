@@ -20,6 +20,16 @@
 # production
 /build
 
+# local dev storage, jobs and signing secret
+/.data/
+
+# generated Prisma client (rebuilt by `prisma generate` on install/build)
+/generated/
+
+# python worker
+/worker/.venv/
+__pycache__/
+
 # misc
 .DS_Store
 *.pem

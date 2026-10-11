@@ -1,0 +1,101 @@
+# Deploying cloudDSP
+
+```
+Browser ──presigned PUT/GET──▶ Cloudflare R2 ◀──presigned GET/PUT── GPU workers (home, outbound only)
+   │                                                                    │
+   └────────── jobs, status ──────▶ Vercel (Next.js) ◀── claim, progress ┘
+                                        │
+                                  Prisma Postgres
+```
+
+Audio never passes through Vercel: the browser and the workers move files
+straight to and from R2 with short-lived signed URLs. Vercel only hands out
+those URLs and keeps the job queue in Postgres. Workers make outbound HTTPS
+requests only, so the home cluster needs no open ports.
+
+Locally, anything left unconfigured falls back to `.data/`: jobs as JSON files
+and files on disk. `npm run dev` + `npm run worker` work with zero setup.
+
+## 1. Cloudflare R2
+
+1. **Create a bucket**, e.g. `clouddsp`.
+2. **API token**: R2 › Manage API tokens › Create. Permission *Object Read &
+   Write*, limited to that bucket. Note the Access Key ID, Secret Access Key and
+   your Account ID.
+3. **CORS policy** (bucket › Settings › CORS), so the browser can upload,
+   stream previews and build zips:
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://YOUR-APP.vercel.app", "http://localhost:3000"],
+       "AllowedMethods": ["GET", "PUT", "HEAD"],
+       "AllowedHeaders": ["Content-Type", "Range"],
+       "ExposeHeaders": ["Content-Length", "Content-Range", "ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+   Add your custom domain too if you use one.
+4. **Auto-delete** (bucket › Settings › Object lifecycle rules): delete objects
+   after 2 days. Uploaded tracks and results then clean themselves up.
+
+## 2. Vercel
+
+1. Import the repository.
+2. **Storage › Prisma Postgres** from the Marketplace, connected to the project.
+   It injects the connection settings. The app reads `DATABASE_URL`, which must
+   be the direct `postgres://` connection string (not `prisma+postgres://`).
+   If the integration names it differently, add `DATABASE_URL` with that value.
+3. **Environment variables** (see `.env.example`):
+
+   | Variable | Value |
+   |---|---|
+   | `R2_ACCOUNT_ID` | Cloudflare account ID |
+   | `R2_ACCESS_KEY_ID` | from the R2 token |
+   | `R2_SECRET_ACCESS_KEY` | from the R2 token |
+   | `R2_BUCKET` | bucket name |
+   | `WORKER_TOKEN` | long random secret, see below |
+
+   Generate a worker token with:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+
+   Without `WORKER_TOKEN`, production refuses every worker.
+4. Deploy. Vercel runs `npm run vercel-build`, which generates the Prisma
+   client, applies migrations (`prisma migrate deploy`) and builds Next.js.
+
+## 3. GPU workers
+
+On each GPU machine (needs `uv`, `ffmpeg` and an NVIDIA driver):
+
+```bash
+cd worker && uv sync
+```
+
+Then run with the site URL and the same token:
+
+```powershell
+$env:CLOUDDSP_URL = "https://YOUR-APP.vercel.app"
+$env:WORKER_TOKEN = "<the token>"
+uv run --project worker clouddsp-worker
+```
+
+Run one worker per GPU. Any number can poll at once: jobs are claimed with
+`FOR UPDATE SKIP LOCKED`, and a job whose worker goes silent for two minutes is
+handed to another worker automatically. Workers ride out site restarts and
+redeploys by retrying.
+
+## Notes
+
+- **Vercel plan**: Hobby is for non-commercial use. A free community tool is
+  likely fine; check Vercel's terms, and use Pro if it's ever monetized.
+- **Schema changes**: edit `prisma/schema.prisma`, run
+  `npx prisma migrate dev --name <change>` against a dev database, commit the
+  new folder in `prisma/migrations`. The next deploy applies it.
+- **Windows builds**: build from the folder's real casing
+  (`Downloads\clouddsp`). Opening it as `cloudDSP` makes the bundler load
+  React twice and prerendering fails.

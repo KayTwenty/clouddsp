@@ -1,0 +1,30 @@
+[project]
+name = "clouddsp-worker"
+version = "0.1.0"
+description = "GPU worker for cloudDSP: claims jobs, separates stems, writes deck-ready exports."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "demucs>=4.0.1",
+    "numpy>=1.26",
+    "nvidia-ml-py>=13.615.71",
+    "requests>=2.32",
+    "soundfile>=0.12",
+    "torch>=2.7",
+    "torchaudio>=2.7",
+]
+
+[project.scripts]
+clouddsp-worker = "clouddsp_worker.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchaudio = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

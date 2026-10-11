@@ -1,69 +1,131 @@
-import Image from "next/image";
+import {
+  AudioWaveform,
+  Cpu,
+  Disc3,
+  Layers,
+  ListMusic,
+  Metronome,
+  Upload,
+  Usb,
+  type LucideIcon,
+} from "lucide-react";
+import SideScenes from "./ui/side-scenes";
+import Uploader from "./ui/uploader";
+
+const STEPS: { title: string; body: string; icon: LucideIcon }[] = [
+  {
+    title: "Upload",
+    body: "Drop in a track or a whole playlist. Files go straight to storage and are deleted after processing.",
+    icon: Upload,
+  },
+  {
+    title: "Process",
+    body: "Our GPUs separate stems and analyse beatgrid, key, waveforms, cues and phrases.",
+    icon: Cpu,
+  },
+  {
+    title: "Export",
+    body: "Download a ready-to-play USB folder, or write it straight to your stick from the browser.",
+    icon: Usb,
+  },
+];
+
+const FEATURES: { title: string; body: string; icon: LucideIcon }[] = [
+  {
+    title: "Stem separation",
+    body: "Native stems on modded decks, or separate stem tracks that play on any player.",
+    icon: Layers,
+  },
+  {
+    title: "CDJ waveforms",
+    body: "Preview, colour and 3-band waveforms, written in the native format.",
+    icon: AudioWaveform,
+  },
+  {
+    title: "Beatgrid & key",
+    body: "Downbeat-aware grids and key detection.",
+    icon: Metronome,
+  },
+  {
+    title: "Metadata & playlists",
+    body: "Tags, artwork and playlists exported as a USB library.",
+    icon: ListMusic,
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="flex flex-1 flex-col">
+      <SideScenes />
+      <header className="border-b border-border">
+        <div className="mx-auto flex max-w-5xl items-center px-4 py-4 sm:px-6">
+          <span className="flex items-center gap-2 font-mono text-lg font-semibold tracking-tight">
+            <Disc3 className="size-5 text-accent" aria-hidden />
+            <span>
+              cloud<span className="text-accent">DSP</span>
+            </span>
+          </span>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
+        <section className="py-16 sm:py-20">
+          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
+            Stems and USB prep for your decks,{" "}
+            <span className="text-accent">without melting your laptop.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-4 max-w-xl text-lg text-muted">
+            Upload your tracks and get back stems, waveforms, beatgrids and
+            metadata, ready for Pioneer DJ CDJs and XDJs and Denon DJ players.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
+
+        <section aria-label="Upload tracks">
+          <Uploader />
+        </section>
+
+        <section className="py-16">
+          <h2 className="text-2xl font-semibold">How it works</h2>
+          <ol className="mt-6 grid gap-4 sm:grid-cols-3">
+            {STEPS.map(({ title, body, icon: Icon }) => (
+              <li
+                key={title}
+                className="rounded-xl border border-border bg-surface p-5"
+              >
+                <Icon className="size-6 text-accent-2" aria-hidden />
+                <h3 className="mt-3 font-semibold">{title}</h3>
+                <p className="mt-1 text-sm text-muted">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="pb-16">
+          <h2 className="text-2xl font-semibold">What you get</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {FEATURES.map(({ title, body, icon: Icon }) => (
+              <div
+                key={title}
+                className="flex gap-4 rounded-xl border border-border bg-surface p-5"
+              >
+                <Icon className="size-6 shrink-0 text-accent" aria-hidden />
+                <div>
+                  <h3 className="font-semibold">{title}</h3>
+                  <p className="mt-1 text-sm text-muted">{body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-muted sm:px-6">
+          cloudDSP is an independent community project and is not affiliated
+          with or endorsed by AlphaTheta or Pioneer DJ. We don&apos;t
+          distribute firmware. Only upload music you have the rights to use.
+        </div>
+      </footer>
     </div>
   );
 }
