@@ -1,0 +1,38 @@
+name: Bug report
+description: Something isn't working
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options:
+        - clouddsp.ca
+        - Self-hosted (npm run selfhost)
+        - Self-hosted (Docker)
+        - Self-hosted (other)
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: Target device or software
+      placeholder: e.g. CDJ-3000 with cdj3k-mods, XDJ-AZ, Ableton
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver (worker problems)
+      placeholder: e.g. RTX 4090, driver 616
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Worker or browser console output. Remove tokens and keys first.
+      render: text

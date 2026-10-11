@@ -110,10 +110,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               firmware. Only upload music you have the rights to use.
             </p>
             <div className="flex flex-col gap-2 sm:items-end">
-              <nav aria-label="Footer" className="flex gap-4">
+              <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-1">
                 <Link href="/about" className="hover:text-foreground">About</Link>
                 <Link href="/status" className="hover:text-foreground">Status</Link>
+                <Link href="/self-host" className="hover:text-foreground">Self-host</Link>
                 <Link href="/about#privacy" className="hover:text-foreground">Privacy</Link>
+                <a href={SITE.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground">
+                  Source code
+                </a>
               </nav>
               <p className="flex items-center gap-2">
                 <CanadaFlag title="Canada" className="h-3 w-auto rounded-[2px]" />

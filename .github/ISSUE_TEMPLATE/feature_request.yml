@@ -1,0 +1,15 @@
+name: Feature or device request
+description: Suggest an idea or support for another deck or mod
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: For a new deck or mod, links to its stem format or documentation help a lot.

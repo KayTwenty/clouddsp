@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
     preset: preset as PresetId,
     format: audioFormat as AudioFormat,
   });
-  const uploadUrl = await signedUrl(request.nextUrl.origin, "PUT", job.inputKey);
+  // Browser-facing links are relative (built-in storage), so they keep working
+  // behind a reverse proxy where the server can't see its public https origin.
+  const uploadUrl = await signedUrl("", "PUT", job.inputKey);
   return Response.json({ jobId: job.id, uploadUrl });
 }
 
@@ -56,10 +58,7 @@ export async function GET(request: NextRequest) {
     .filter(Boolean)
     .slice(0, 200);
   const jobs = await Promise.all(ids.map((id) => getJob(id).catch(() => null)));
-  const origin = request.nextUrl.origin;
   return Response.json({
-    jobs: await Promise.all(
-      jobs.filter((j) => j !== null).map((j) => publicJob(j, origin)),
-    ),
+    jobs: await Promise.all(jobs.filter((j) => j !== null).map((j) => publicJob(j, ""))),
   });
 }

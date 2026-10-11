@@ -4,14 +4,15 @@ import { badRequest } from "@/lib/server/http";
 import {
   objectInfo,
   readStream,
-  usingR2,
+  usingObjectStorage,
   verifySignature,
   writeStream,
 } from "@/lib/server/storage";
 
-// Local stand-in for R2 presigned URLs, used only in local dev. Only requests
+// Built-in file storage, used when no object storage is configured (local dev
+// and single-machine self-hosting). Works like presigned URLs: only requests
 // carrying a valid, unexpired signature for this exact key and method get
-// through. With R2 configured, files never touch this server.
+// through. With object storage configured, files never touch this server.
 
 type Ctx = RouteContext<"/api/storage/[...key]">;
 
@@ -21,7 +22,7 @@ async function keyFrom(ctx: Ctx) {
 }
 
 export async function PUT(request: NextRequest, ctx: Ctx) {
-  if (usingR2) return badRequest("Not found", 404);
+  if (usingObjectStorage) return badRequest("Not found", 404);
   const key = await keyFrom(ctx);
   if (!(await verifySignature("PUT", key, request.nextUrl.searchParams))) {
     return badRequest("Invalid or expired signature", 403);
@@ -38,7 +39,7 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 
 // Supports Range requests so audio players can stream and seek, like R2 does.
 export async function GET(request: NextRequest, ctx: Ctx) {
-  if (usingR2) return badRequest("Not found", 404);
+  if (usingObjectStorage) return badRequest("Not found", 404);
   const key = await keyFrom(ctx);
   if (!(await verifySignature("GET", key, request.nextUrl.searchParams))) {
     return badRequest("Invalid or expired signature", 403);

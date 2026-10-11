@@ -3,7 +3,7 @@ import "server-only";
 import { AwsClient } from "aws4fetch";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -12,9 +12,11 @@ import { pipeline } from "node:stream/promises";
 // downloads, and the GPU workers read and write, directly through these URLs,
 // so audio never passes through the web server.
 //
-// Production: Cloudflare R2 presigned URLs (set the R2_* variables).
-// Local dev: files under .data/storage, served by /api/storage with our own
-// HMAC signatures, so nothing else changes between the two.
+// Object storage: any S3-compatible service through presigned URLs, set with
+//   S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY (S3_REGION)
+// or, for Cloudflare R2, the shorthand R2_ACCOUNT_ID + R2_* equivalents.
+// Otherwise: files under .data/storage, served by /api/storage with our own
+// HMAC signatures. Good for local dev and single-machine self-hosting.
 
 type Method = "GET" | "PUT";
 
@@ -35,25 +37,34 @@ function encodeKey(key: string) {
   return key.split("/").map(encodeURIComponent).join("/");
 }
 
-// --- Cloudflare R2 --------------------------------------------------------------
+// --- S3-compatible object storage (R2, MinIO, AWS S3, B2, Wasabi) --------------
 
-const R2 =
-  process.env.R2_ACCOUNT_ID &&
-  process.env.R2_ACCESS_KEY_ID &&
-  process.env.R2_SECRET_ACCESS_KEY &&
-  process.env.R2_BUCKET
-    ? {
-        endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET}`,
-        client: new AwsClient({
-          accessKeyId: process.env.R2_ACCESS_KEY_ID,
-          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
-          service: "s3",
-          region: "auto",
-        }),
-      }
-    : null;
+function s3Config() {
+  const env = process.env;
+  // STORAGE=local forces the built-in storage even when keys are configured.
+  if (env.STORAGE === "local") return null;
+  // `||`, not `??`: blank lines copied from .env.example count as unset.
+  const endpoint =
+    env.S3_ENDPOINT || (env.R2_ACCOUNT_ID ? `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com` : undefined);
+  const bucket = env.S3_BUCKET || env.R2_BUCKET;
+  const accessKeyId = env.S3_ACCESS_KEY_ID || env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = env.S3_SECRET_ACCESS_KEY || env.R2_SECRET_ACCESS_KEY;
+  if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) return null;
+  return {
+    // Path-style URLs work with every provider, including MinIO.
+    endpoint: `${endpoint.replace(/\/$/, "")}/${bucket}`,
+    client: new AwsClient({
+      accessKeyId,
+      secretAccessKey,
+      service: "s3",
+      region: env.S3_REGION || "auto",
+    }),
+  };
+}
 
-export const usingR2 = R2 !== null;
+const S3 = s3Config();
+
+export const usingObjectStorage = S3 !== null;
 
 // --- Local disk -----------------------------------------------------------------
 
@@ -98,8 +109,8 @@ export async function signedUrl(
   ttlSeconds = 3600,
   options: { download?: string } = {},
 ) {
-  if (R2) {
-    const url = new URL(`${R2.endpoint}/${encodeKey(key)}`);
+  if (S3) {
+    const url = new URL(`${S3.endpoint}/${encodeKey(key)}`);
     url.searchParams.set("X-Amz-Expires", String(ttlSeconds));
     if (method === "GET") {
       // Objects uploaded without a type would otherwise come back as binary,
@@ -112,7 +123,7 @@ export async function signedUrl(
         );
       }
     }
-    const signed = await R2.client.sign(url.toString(), { method, aws: { signQuery: true } });
+    const signed = await S3.client.sign(url.toString(), { method, aws: { signQuery: true } });
     return signed.url;
   }
 
@@ -123,10 +134,10 @@ export async function signedUrl(
 
 // Size of a stored object, or null if it doesn't exist.
 export async function objectSize(key: string) {
-  if (R2) {
-    const res = await R2.client.fetch(`${R2.endpoint}/${encodeKey(key)}`, { method: "HEAD" });
+  if (S3) {
+    const res = await S3.client.fetch(`${S3.endpoint}/${encodeKey(key)}`, { method: "HEAD" });
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`R2 HEAD failed with ${res.status}`);
+    if (!res.ok) throw new Error(`Storage HEAD failed with ${res.status}`);
     return Number(res.headers.get("content-length") ?? 0);
   }
   try {
@@ -162,4 +173,37 @@ export async function objectInfo(key: string) {
 // `end` is inclusive, matching HTTP Range semantics.
 export function readStream(key: string, range?: { start: number; end: number }) {
   return Readable.toWeb(createReadStream(filePath(key), range));
+}
+
+// Built-in storage deletes uploads and results after RETENTION_HOURS (default
+// 48, 0 keeps everything), so self-hosted instances keep the same privacy
+// promise as object storage with a lifecycle rule. Runs at most every 15
+// minutes, triggered by normal traffic.
+const CLEANUP_EVERY_MS = 15 * 60 * 1000;
+let lastCleanup = 0;
+
+export async function cleanupLocalStorage() {
+  if (S3 || Date.now() - lastCleanup < CLEANUP_EVERY_MS) return;
+  lastCleanup = Date.now();
+  const hours = Number(process.env.RETENTION_HOURS || 48);
+  if (!(hours > 0)) return;
+  const cutoff = Date.now() - hours * 60 * 60 * 1000;
+
+  for (const area of ["inputs", "outputs"]) {
+    const dir = path.join(STORAGE_DIR, area);
+    let entries: string[];
+    try {
+      entries = await readdir(dir);
+    } catch {
+      continue;
+    }
+    for (const name of entries) {
+      const target = path.join(dir, name);
+      try {
+        if ((await stat(target)).mtimeMs < cutoff) await rm(target, { recursive: true, force: true });
+      } catch {
+        // Another request may be removing it too; try again next round.
+      }
+    }
+  }
 }

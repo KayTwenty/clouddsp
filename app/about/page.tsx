@@ -25,7 +25,7 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: Upload,
     title: "Upload",
-    body: "Your browser sends each track straight to encrypted cloud storage. It never passes through our web server.",
+    body: "Your browser uploads each track to private storage through a link that expires within the hour.",
   },
   {
     icon: Cpu,
@@ -47,7 +47,11 @@ const STEPS: { icon: LucideIcon; title: string; body: string }[] = [
 const FAQ = [
   {
     q: "Is cloudDSP free?",
-    a: "Yes. It's a community project running on our own GPUs. There's no account and nothing to pay.",
+    a: "Yes. There's no account and nothing to pay. cloudDSP is also open source, so anyone can run their own copy.",
+  },
+  {
+    q: "Can I run cloudDSP on my own computer?",
+    a: "Yes. With an NVIDIA GPU you can run the website and the GPU worker together on one machine with a single command, no cloud accounts needed. The Self-host page on this site walks through it.",
   },
   {
     q: "Do I need modded firmware?",
@@ -153,8 +157,8 @@ export default function AboutPage() {
         <ul className="mt-4 max-w-2xl list-disc space-y-2 pl-5 text-muted">
           <li>No account, no sign up, no tracking cookies.</li>
           <li>
-            Tracks upload straight to private cloud storage and are only reachable through links
-            that expire within an hour.
+            Tracks are kept in private storage and are only reachable through links that expire
+            within an hour.
           </li>
           <li>Your music is used only to make your stems. It is never shared or used for training.</li>
           <li>Uploads and results are deleted from storage within 48 hours.</li>

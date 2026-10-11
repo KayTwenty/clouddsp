@@ -1,0 +1,55 @@
+# Self-host cloudDSP on one machine with its own NVIDIA GPU:
+#
+#   1. Put a WORKER_TOKEN in .env (see .env.example)
+#   2. docker compose up -d --build
+#   3. Open http://localhost:3000
+#
+# Jobs and files are stored in the clouddsp-data volume and deleted after
+# RETENTION_HOURS. For GTX 10-series cards set CLOUDDSP_TORCH=cu126 in .env.
+# Full guide: docs/self-hosting.md
+
+services:
+  web:
+    build:
+      context: .
+      target: runner
+      args:
+        COMMIT_SHA: ${COMMIT_SHA:-}
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      WORKER_TOKEN: ${WORKER_TOKEN:?Set WORKER_TOKEN in .env, see .env.example}
+      STORAGE: ${STORAGE:-local}
+      RETENTION_HOURS: ${RETENTION_HOURS:-48}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
+    volumes:
+      - clouddsp-data:/app/.data
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./worker
+      args:
+        TORCH: ${CLOUDDSP_TORCH:-cu128}
+    # A fixed hostname keeps the worker's ID stable across restarts.
+    hostname: clouddsp-gpu
+    environment:
+      CLOUDDSP_URL: http://web:3000
+      WORKER_TOKEN: ${WORKER_TOKEN:?Set WORKER_TOKEN in .env, see .env.example}
+      WORKER_NAME: ${WORKER_NAME:-}
+    volumes:
+      - model-cache:/cache
+    depends_on:
+      - web
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  clouddsp-data:
+  model-cache:

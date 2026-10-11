@@ -131,9 +131,6 @@ def main() -> None:
     args = [a for a in sys.argv[1:] if a != "--dry-run"]
     dry_run = "--dry-run" in sys.argv[1:]
 
-    if not shutil.which("uv"):
-        sys.exit("[start] uv isn't installed. Get it from https://docs.astral.sh/uv/")
-
     forced = os.environ.get("CLOUDDSP_TORCH", "").strip().lower()
     gpus = visible(query_gpus())
     for g in gpus:
@@ -150,6 +147,8 @@ def main() -> None:
 
     if dry_run:
         return
+    if not shutil.which("uv"):
+        sys.exit("[start] uv isn't installed. Get it from https://docs.astral.sh/uv/")
 
     cmd = ["uv", "run", "--project", str(WORKER_DIR)]
     if extra:

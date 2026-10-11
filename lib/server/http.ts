@@ -13,7 +13,7 @@ export function isWorker(request: NextRequest) {
   // The dev default is public, so production refuses all workers until a real
   // token is configured rather than falling back to it.
   const token =
-    process.env.WORKER_TOKEN ?? (process.env.NODE_ENV === "production" ? null : "dev-worker-token");
+    process.env.WORKER_TOKEN || (process.env.NODE_ENV === "production" ? null : "dev-worker-token");
   if (!token) return false;
   const given = Buffer.from(request.headers.get("authorization") ?? "");
   const expected = Buffer.from(`Bearer ${token}`);

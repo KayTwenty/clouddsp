@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cloudDSP
 
-## Getting Started
+Free, open source stem separation for DJs. Upload tracks and get vocals,
+drums, bass and melody stems back, ready for your decks:
 
-First, run the development server:
+- **CDJ-3000 with [cdj3k-mods](https://github.com/nsaintot/cdj3k-mods):** stems
+  written in the mod's native USB format, so they load on the deck itself.
+- **Everything else** (CDJ-3000X, CDJ-2000 series, XDJ-XZ / AZ / RX3, Denon
+  Engine DJ players, rekordbox, Serato, Traktor, any DAW): each stem as its own
+  WAV, FLAC or MP3, plus an instrumental.
+
+Separation runs on GPUs with [Demucs](https://github.com/facebookresearch/demucs).
+The site shows the separation live as it happens, lets you audition every stem
+in the browser and download single files or one zip.
+
+Hosted at **[clouddsp.ca](https://www.clouddsp.ca)**, or run your own copy.
+
+## Run it on your own computer
+
+You need an NVIDIA GPU, [Node.js 22+](https://nodejs.org),
+[uv](https://docs.astral.sh/uv/) and [ffmpeg](https://ffmpeg.org).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/KayTwenty/clouddsp.git
+cd clouddsp
+npm install
+npm run selfhost
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. That's the whole setup: the website and a GPU worker
+using your local GPU run together, files and jobs are stored on this machine and
+deleted after 48 hours. No cloud accounts, no configuration. The first run
+builds the site and downloads the right PyTorch build for your GPU (GTX 10-series
+through RTX 50-series are detected automatically).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Prefer containers? `docker compose up -d --build` does the same.
+See [docs/self-hosting.md](docs/self-hosting.md) for Docker, running on a home
+server for other people, adding more GPUs and every setting.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy publicly
 
-## Learn More
+The hosted version runs the website on Vercel with Prisma Postgres for the job
+queue and Cloudflare R2 for files, while GPU workers on home machines pull jobs
+over HTTPS. See [docs/deploy-vercel.md](docs/deploy-vercel.md).
 
-To learn more about Next.js, take a look at the following resources:
+## How it works
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+Browser ──upload──▶ storage ◀──fetch / save── GPU worker(s)
+   │                                              │
+   └── jobs, live status ──▶ website ◀── claim, progress
+                               │
+                          job queue
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Workers only make outgoing requests, so a GPU can sit anywhere: the same
+machine, a home server or a rented cloud GPU. Storage and the queue each have a
+zero-setup local mode and a scalable mode (any S3-compatible storage, Postgres).
+More in [docs/architecture.md](docs/architecture.md).
 
-## Deploy on Vercel
+## Project layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Path | What's there |
+|---|---|
+| `app/` | Next.js pages, API routes and UI components |
+| `app/api/` | Job, storage, status and worker endpoints |
+| `app/ui/` | Uploader, device picker, live visualizer, stem player, 3D side panels |
+| `lib/` | Device list, site settings and server code (job queue, storage) |
+| `prisma/` | Database schema and migrations (Postgres mode) |
+| `worker/` | Python GPU worker: separation, exports, live telemetry |
+| `scripts/selfhost.mjs` | The one-command local launcher |
+| `docs/` | Self-hosting, deployment and architecture guides |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+
+```bash
+npm install
+npm run dev      # website on http://localhost:3000
+npm run worker   # GPU worker, in a second terminal
+```
+
+`npm run lint` and `npx tsc --noEmit` check the code. Contributions are welcome,
+see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+cloudDSP is free software under the [GNU AGPL v3](LICENSE). You can use, modify
+and self-host it. If you run a modified version as a public website, the
+license asks you to share your changes with its users; the footer's "Source
+code" link (`NEXT_PUBLIC_SOURCE_URL`) is there for that.
+
+cloudDSP is an independent project and is not affiliated with or endorsed by
+AlphaTheta, Pioneer DJ, Denon DJ, inMusic or the developers of any firmware mod.
+It does not distribute firmware. Product names are used only to describe
+compatibility. Only process music you have the rights to use.

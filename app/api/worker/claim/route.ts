@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { badRequest, isWorker } from "@/lib/server/http";
 import { claimNextJob, heartbeat, parseWorkerBeat } from "@/lib/server/jobs";
-import { signedUrl } from "@/lib/server/storage";
+import { cleanupLocalStorage, signedUrl } from "@/lib/server/storage";
 
 // Workers poll this. Returns 204 when there is nothing to do. The body carries
 // the worker's identity and GPU stats, which feed the public status page.
@@ -10,6 +10,10 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json().catch(() => null)) as { worker?: unknown } | null;
   const worker = parseWorkerBeat(body?.worker, "idle");
+
+  // Workers poll every couple of seconds, which makes this a handy clock for
+  // expiring old files in built-in storage (throttled to every 15 minutes).
+  void cleanupLocalStorage().catch(() => {});
 
   const job = await claimNextJob(worker?.id ?? null);
   if (worker) await heartbeat(job ? { ...worker, status: "busy", jobId: job.id } : worker);

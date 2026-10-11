@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.next
+.data
+node_modules
+generated
+docs
+*.md
+!README.md
+.env*
+!.env.example
+worker
+compose.yaml
+Dockerfile
+.dockerignore

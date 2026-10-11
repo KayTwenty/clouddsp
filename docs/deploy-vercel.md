@@ -1,4 +1,8 @@
-# Deploying cloudDSP
+# Deploying cloudDSP on Vercel
+
+This is how the public instance at clouddsp.ca runs. To run cloudDSP on your
+own machine or server instead, see [self-hosting.md](self-hosting.md). Any
+S3-compatible storage works in place of R2 (see the `S3_*` settings there).
 
 ```
 Browser ──presigned PUT/GET──▶ Cloudflare R2 ◀──presigned GET/PUT── GPU workers (home, outbound only)

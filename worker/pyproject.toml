@@ -3,6 +3,7 @@ name = "clouddsp-worker"
 version = "0.1.0"
 description = "GPU worker for cloudDSP: claims jobs, separates stems, writes deck-ready exports."
 requires-python = ">=3.11,<3.13"
+license = "AGPL-3.0-only"
 dependencies = [
     "demucs>=4.0.1",
     "numpy>=1.26",

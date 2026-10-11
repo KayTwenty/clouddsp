@@ -2,6 +2,8 @@
   "name": "clouddsp",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0-only",
+  "repository": "github:KayTwenty/clouddsp",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -9,7 +11,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "worker": "uv run --no-project worker/start.py"
+    "worker": "uv run --no-project worker/start.py",
+    "selfhost": "node scripts/selfhost.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
