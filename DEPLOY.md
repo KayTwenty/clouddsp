@@ -88,6 +88,12 @@ $env:WORKER_TOKEN = "<the token>"
 uv run --project worker --extra cu126 clouddsp-worker
 ```
 
+Optional: `$env:WORKER_NAME = "Rack 1 GPU 2"` sets how the worker appears on the
+public `/status` page (default: the GPU model). The machine's hostname is never
+sent. When the worker runs inside the site checkout, it also reads
+`CLOUDDSP_URL` and `WORKER_TOKEN` from the repo's `.env` / `.env.local` if they
+aren't set in the shell.
+
 Use the same `--extra` in both commands. `npm run worker` (cu128) and
 `npm run worker:pascal` (cu126) are shortcuts for the second one. If the build
 doesn't support the card, the worker stops at startup and says which one to use.
@@ -99,6 +105,11 @@ redeploys by retrying.
 
 ## Notes
 
+- **SEO**: canonical URLs, the sitemap and social cards use the production
+  domain Vercel provides automatically. With a custom domain, set
+  `NEXT_PUBLIC_SITE_URL=https://your-domain` so they point at it.
+- **Privacy claims**: the About page promises files are deleted within 48
+  hours. That's true once the R2 lifecycle rule from step 1 is in place.
 - **Vercel plan**: Hobby is for non-commercial use. A free community tool is
   likely fine; check Vercel's terms, and use Pro if it's ever monetized.
 - **Schema changes**: edit `prisma/schema.prisma`, run

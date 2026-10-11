@@ -1,7 +1,6 @@
 import {
   AudioWaveform,
   Cpu,
-  Disc3,
   Layers,
   ListMusic,
   Metronome,
@@ -9,6 +8,8 @@ import {
   Usb,
   type LucideIcon,
 } from "lucide-react";
+import { SITE } from "@/lib/site";
+import JsonLd from "./ui/json-ld";
 import SideScenes from "./ui/side-scenes";
 import Uploader from "./ui/uploader";
 
@@ -56,17 +57,26 @@ const FEATURES: { title: string; body: string; icon: LucideIcon }[] = [
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: SITE.name,
+          url: SITE.url,
+          description: SITE.description,
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Any (web browser)",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          featureList: [
+            "AI stem separation (vocals, drums, bass, other)",
+            "Native stems for CDJ-3000 with cdj3k-mods",
+            "Stem tracks for XDJ, Denon Engine DJ, DJ software and DAWs",
+            "WAV, FLAC and MP3 export",
+            "In-browser stem player",
+          ],
+        }}
+      />
       <SideScenes />
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center px-4 py-4 sm:px-6">
-          <span className="flex items-center gap-2 font-mono text-lg font-semibold tracking-tight">
-            <Disc3 className="size-5 text-accent" aria-hidden />
-            <span>
-              cloud<span className="text-accent">DSP</span>
-            </span>
-          </span>
-        </div>
-      </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
         <section className="py-16 sm:py-20">
@@ -118,14 +128,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-4 py-6 text-xs text-muted sm:px-6">
-          cloudDSP is an independent community project and is not affiliated
-          with or endorsed by AlphaTheta or Pioneer DJ. We don&apos;t
-          distribute firmware. Only upload music you have the rights to use.
-        </div>
-      </footer>
     </div>
   );
 }

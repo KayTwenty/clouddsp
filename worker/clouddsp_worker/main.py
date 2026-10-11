@@ -6,7 +6,9 @@ out, so it runs the same on this PC, a rented GPU or the home cluster.
 
 from __future__ import annotations
 
+import hashlib
 import os
+import socket
 import sys
 import tempfile
 import time
@@ -15,12 +17,49 @@ from pathlib import Path
 
 import requests
 
-from . import audio, exporters, separate
+from . import audio, exporters, separate, telemetry
 from .live import LiveReporter
 
+def _load_repo_env() -> None:
+    """Fill CLOUDDSP_URL / WORKER_TOKEN from the repo's .env files if unset.
+
+    Convenient when the worker runs next to the site checkout; real
+    environment variables always win.
+    """
+    root = Path(__file__).resolve().parents[2]
+    for name in (".env.local", ".env"):
+        path = root / name
+        if not path.is_file():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            key, sep, value = line.strip().partition("=")
+            if sep and key in ("CLOUDDSP_URL", "WORKER_TOKEN") and value and key not in os.environ:
+                os.environ[key] = value.strip().strip('"').strip("'")
+
+
+_load_repo_env()
 SITE = os.environ.get("CLOUDDSP_URL", "http://localhost:3000").rstrip("/")
 TOKEN = os.environ.get("WORKER_TOKEN", "dev-worker-token")
 POLL_SECONDS = 2.0
+
+
+def _identity() -> dict:
+    """How this worker shows up on the public status page.
+
+    The id is stable across restarts (machine + GPU) so a restarted worker
+    doesn't appear twice. The name defaults to the GPU model; set WORKER_NAME
+    to change it. The hostname is only hashed, never sent.
+    """
+    gpu = telemetry.sample()
+    gpu_name = gpu["name"] if gpu else str(separate.DEVICE)
+    seed = f"{socket.gethostname()}/{gpu_name}/{os.environ.get('CUDA_VISIBLE_DEVICES', '0')}"
+    return {
+        "id": os.environ.get("WORKER_ID") or hashlib.sha256(seed.encode()).hexdigest()[:16],
+        "name": os.environ.get("WORKER_NAME") or gpu_name,
+    }
+
+
+WORKER = _identity()
 
 session = requests.Session()
 session.headers["Authorization"] = f"Bearer {TOKEN}"
@@ -36,7 +75,7 @@ def live_poster(job_id: str):
     # The reporter posts from its own thread, so it gets its own session.
     own = requests.Session()
     own.headers["Authorization"] = session.headers["Authorization"]
-    return lambda body: api(job_id, "progress", via=own, **body)
+    return lambda body: api(job_id, "progress", via=own, worker=WORKER, **body)
 
 
 def download(url: str, target: Path) -> None:
@@ -112,10 +151,14 @@ def process(claim: dict) -> None:
 
 def main() -> None:
     sys.stdout.reconfigure(line_buffering=True)  # show logs live when piped
-    print(f"cloudDSP worker on {separate.DEVICE}, polling {SITE}")
+    print(f"cloudDSP worker '{WORKER['name']}' on {separate.DEVICE}, polling {SITE}")
     while True:
         try:
-            r = session.post(f"{SITE}/api/worker/claim", timeout=30)
+            r = session.post(
+                f"{SITE}/api/worker/claim",
+                json={"worker": {**WORKER, "gpu": telemetry.sample()}},
+                timeout=30,
+            )
             if r.status_code == 204:
                 time.sleep(POLL_SECONDS)
                 continue

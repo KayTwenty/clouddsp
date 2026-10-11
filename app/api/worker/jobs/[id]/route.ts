@@ -1,7 +1,15 @@
 import type { NextRequest } from "next/server";
 import { STEMS } from "@/lib/devices";
 import { badRequest, isWorker } from "@/lib/server/http";
-import { extendLease, getJob, mergeLive, saveJob, type JobOutput } from "@/lib/server/jobs";
+import {
+  extendLease,
+  getJob,
+  heartbeat,
+  mergeLive,
+  parseWorkerBeat,
+  saveJob,
+  type JobOutput,
+} from "@/lib/server/jobs";
 import { objectSize, signedUrl } from "@/lib/server/storage";
 
 // Worker updates for a claimed job. One endpoint, switched on `action`:
@@ -42,7 +50,15 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/worker/
         mergeLive(job, body.live as Record<string, unknown>);
       }
       extendLease(job);
-      await saveJob(job);
+      // The worker's GPU stats come along with live progress.
+      const worker = parseWorkerBeat(
+        body.worker && typeof body.worker === "object"
+          ? { ...(body.worker as object), gpu: job.live?.gpu }
+          : null,
+        "busy",
+        job.id,
+      );
+      await Promise.all([saveJob(job), worker && heartbeat(worker)]);
       return Response.json({ ok: true });
     }
     case "upload-url": {
@@ -91,6 +107,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/worker/
       job.stage = "done";
       job.percent = 100;
       job.live = undefined;
+      job.finishedAt = Date.now();
       await saveJob(job);
       return Response.json({ ok: true });
     }
@@ -99,6 +116,7 @@ export async function POST(request: NextRequest, ctx: RouteContext<"/api/worker/
       job.stage = "failed";
       job.error = String(body.error ?? "Processing failed").slice(0, 500);
       job.live = undefined;
+      job.finishedAt = Date.now();
       await saveJob(job);
       return Response.json({ ok: true });
     }

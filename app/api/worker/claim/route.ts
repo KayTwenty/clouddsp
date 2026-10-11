@@ -1,13 +1,18 @@
 import type { NextRequest } from "next/server";
 import { badRequest, isWorker } from "@/lib/server/http";
-import { claimNextJob } from "@/lib/server/jobs";
+import { claimNextJob, heartbeat, parseWorkerBeat } from "@/lib/server/jobs";
 import { signedUrl } from "@/lib/server/storage";
 
-// Workers poll this. Returns 204 when there is nothing to do.
+// Workers poll this. Returns 204 when there is nothing to do. The body carries
+// the worker's identity and GPU stats, which feed the public status page.
 export async function POST(request: NextRequest) {
   if (!isWorker(request)) return badRequest("Unauthorized", 401);
 
-  const job = await claimNextJob();
+  const body = (await request.json().catch(() => null)) as { worker?: unknown } | null;
+  const worker = parseWorkerBeat(body?.worker, "idle");
+
+  const job = await claimNextJob(worker?.id ?? null);
+  if (worker) await heartbeat(job ? { ...worker, status: "busy", jobId: job.id } : worker);
   if (!job) return new Response(null, { status: 204 });
 
   return Response.json({

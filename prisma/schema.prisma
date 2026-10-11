@@ -31,9 +31,26 @@ model Job {
   preview    Json? // JobPreview
   live       Json? // JobLive, only while processing
   leaseUntil DateTime?
+  workerId   String? // worker that last claimed it
+  startedAt  DateTime? // claimed by a worker
+  finishedAt DateTime? // done or failed
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   // Workers look up the oldest claimable job.
   @@index([status, createdAt])
+  // The status page counts the last 24 hours of finished jobs.
+  @@index([finishedAt])
+}
+
+// A GPU worker, as last seen. Updated on every poll and progress report, which
+// is what the public status page reads.
+model Worker {
+  id        String   @id // stable per machine and GPU, chosen by the worker
+  name      String
+  gpu       Json? // GpuSample
+  status    String   @default("idle") // idle | busy
+  jobId     String?
+  lastSeen  DateTime @default(now())
+  createdAt DateTime @default(now())
 }

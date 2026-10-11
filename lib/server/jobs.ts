@@ -76,6 +76,28 @@ export type Job = {
   createdAt: number;
   updatedAt: number;
   leaseUntil?: number;
+  workerId?: string;
+  startedAt?: number;
+  finishedAt?: number;
+};
+
+export type WorkerBeat = {
+  id: string;
+  name: string;
+  gpu?: GpuSample;
+  status: "idle" | "busy";
+  jobId?: string;
+};
+
+export type WorkerInfo = WorkerBeat & { lastSeen: number };
+
+export type QueueStats = {
+  queued: number;
+  processing: number;
+  done24h: number;
+  failed24h: number;
+  // Average GPU time per finished track (claim to finish), last 24 hours.
+  avgSeconds24h: number | null;
 };
 
 export type NewJob = {
@@ -92,8 +114,16 @@ export type JobStore = {
   getJob(id: string): Promise<Job | null>;
   saveJob(job: Job): Promise<Job>;
   createJob(input: NewJob, inputKey: (id: string) => string): Promise<Job>;
-  claimNextJob(leaseMs: number): Promise<Job | null>;
+  claimNextJob(leaseMs: number, workerId: string | null): Promise<Job | null>;
+  heartbeat(worker: WorkerBeat): Promise<void>;
+  // Workers seen since the given time.
+  listWorkers(since: number): Promise<WorkerInfo[]>;
+  stats(): Promise<QueueStats>;
 };
+
+export const DAY_MS = 24 * 60 * 60 * 1000;
+// A worker reports at least every couple of seconds while alive.
+export const WORKER_ONLINE_MS = 30 * 1000;
 
 let storePromise: Promise<JobStore> | undefined;
 
@@ -123,8 +153,46 @@ export async function createJob(input: NewJob) {
 
 // Hands the oldest queued job to a worker. Jobs whose worker stopped reporting
 // progress (lease expired) go back to the front of the line.
-export async function claimNextJob() {
-  return (await store()).claimNextJob(LEASE_MS);
+export async function claimNextJob(workerId: string | null) {
+  return (await store()).claimNextJob(LEASE_MS, workerId);
+}
+
+export async function heartbeat(worker: WorkerBeat) {
+  return (await store()).heartbeat(worker);
+}
+
+// Workers seen in the last hour; the status page marks the stale ones offline.
+export async function listWorkers() {
+  return (await store()).listWorkers(Date.now() - 60 * 60 * 1000);
+}
+
+export async function queueStats() {
+  return (await store()).stats();
+}
+
+// Validates a worker's self-report from a request body.
+export function parseWorkerBeat(
+  value: unknown,
+  status: WorkerBeat["status"],
+  jobId?: string,
+): WorkerBeat | null {
+  if (!value || typeof value !== "object") return null;
+  const w = value as { id?: unknown; name?: unknown; gpu?: unknown };
+  if (typeof w.id !== "string" || !/^[\w-]{4,64}$/.test(w.id)) return null;
+  const name = typeof w.name === "string" && w.name.trim() ? w.name.trim().slice(0, 60) : "GPU worker";
+  const g = w.gpu as Partial<GpuSample> | undefined;
+  const gpu =
+    g && typeof g.name === "string"
+      ? {
+          name: g.name.slice(0, 80),
+          util: Number(g.util) || 0,
+          memUsed: Number(g.memUsed) || 0,
+          memTotal: Number(g.memTotal) || 0,
+          temp: g.temp === undefined ? undefined : Number(g.temp),
+          power: g.power === undefined ? undefined : Number(g.power),
+        }
+      : undefined;
+  return { id: w.id, name, gpu, status, jobId };
 }
 
 // Merge a worker's live update. Peaks arrive as {stem: [startBucket, ...values]}
