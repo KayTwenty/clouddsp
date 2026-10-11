@@ -13,7 +13,8 @@ dependencies = [
     "torchaudio==2.11.*",
 ]
 
-# Pick the PyTorch build that matches the GPU (install with `uv sync --extra <name>`):
+# PyTorch build per GPU. worker/start.py picks one automatically from nvidia-smi;
+# to choose by hand, use `uv sync --extra <name>`:
 #   cu126  GTX 10-series (Pascal) up to RTX 40-series. Needs NVIDIA driver 560+.
 #   cu128  RTX 20-series up to RTX 50-series (Blackwell). Needs driver 570+.
 # Newer PyTorch CUDA builds dropped Pascal, which is why there are two.

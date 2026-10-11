@@ -70,33 +70,36 @@ and files on disk. `npm run dev` + `npm run worker` work with zero setup.
 
 ## 3. GPU workers
 
-On each GPU machine (needs `uv`, `ffmpeg` and an NVIDIA driver), pick the
-PyTorch build for the card. Newer CUDA builds dropped GTX 10-series support,
-so there are two:
+On each GPU machine (needs `uv`, `ffmpeg` and an NVIDIA driver), from the
+repository root:
+
+```powershell
+$env:CLOUDDSP_URL = "https://YOUR-APP.vercel.app"
+$env:WORKER_TOKEN = "<the token>"
+uv run --no-project worker/start.py
+```
+
+`worker/start.py` (also `npm run worker`) asks `nvidia-smi` which GPU and
+driver are installed, installs the matching PyTorch build on first run and
+starts the worker:
 
 | GPU | Build | Driver |
 |---|---|---|
-| GTX 10-series (Pascal) up to RTX 40-series | `cu126` | 560+ |
-| RTX 20-series up to RTX 50-series (Blackwell) | `cu128` | 570+ |
+| GTX 10-series (Pascal) | `cu126` | 560+ |
+| RTX 20 / 30 / 40-series | `cu128` on driver 570+, otherwise `cu126` | 560+ |
+| RTX 50-series (Blackwell) | `cu128` | 570+ |
+| No NVIDIA GPU | default PyTorch (CPU) | |
 
-From the repository root:
-
-```powershell
-uv sync --project worker --extra cu126
-$env:CLOUDDSP_URL = "https://YOUR-APP.vercel.app"
-$env:WORKER_TOKEN = "<the token>"
-uv run --project worker --extra cu126 clouddsp-worker
-```
+Add `--dry-run` to only print the choice, or set `CLOUDDSP_TORCH=cu126` /
+`cu128` to override it. A machine mixing a GTX 10-series and an RTX 50-series
+card needs one worker per GPU (`CUDA_VISIBLE_DEVICES=0`, `=1`), since no single
+build supports both.
 
 Optional: `$env:WORKER_NAME = "Rack 1 GPU 2"` sets how the worker appears on the
 public `/status` page (default: the GPU model). The machine's hostname is never
 sent. When the worker runs inside the site checkout, it also reads
 `CLOUDDSP_URL` and `WORKER_TOKEN` from the repo's `.env` / `.env.local` if they
 aren't set in the shell.
-
-Use the same `--extra` in both commands. `npm run worker` (cu128) and
-`npm run worker:pascal` (cu126) are shortcuts for the second one. If the build
-doesn't support the card, the worker stops at startup and says which one to use.
 
 Run one worker per GPU. Any number can poll at once: jobs are claimed with
 `FOR UPDATE SKIP LOCKED`, and a job whose worker goes silent for two minutes is
