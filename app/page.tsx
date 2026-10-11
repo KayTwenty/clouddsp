@@ -82,7 +82,7 @@ export default function Home() {
         <section className="py-16 sm:py-20">
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
             Stems and USB prep for your decks,{" "}
-            <span className="text-accent">without melting your laptop.</span>
+            <span className="text-accent">without opening an audio editor or software.</span>
           </h1>
           <p className="mt-4 max-w-xl text-lg text-muted">
             Upload your tracks and get back stems, waveforms, beatgrids and

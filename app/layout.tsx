@@ -2,7 +2,34 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { SITE } from "@/lib/site";
+import CanadaFlag from "country-flag-icons/react/3x2/CA";
 import SiteNav from "./ui/site-nav";
+
+// The commit this build was made from; links to it when the repo is on GitHub.
+function BuildId() {
+  const sha = process.env.NEXT_PUBLIC_COMMIT_SHA;
+  if (!sha) return null;
+  const repo = process.env.NEXT_PUBLIC_COMMIT_REPO;
+  const short = sha.slice(0, 7);
+  return (
+    <p className="font-mono text-[11px] opacity-70">
+      Build{" "}
+      {repo ? (
+        <a
+          href={`https://github.com/${repo}/commit/${sha}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-foreground"
+          title={sha}
+        >
+          {short}
+        </a>
+      ) : (
+        <span title={sha}>{short}</span>
+      )}
+    </p>
+  );
+}
 import "./globals.css";
 
 const geistSans = Geist({
@@ -82,11 +109,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               endorsed by AlphaTheta, Pioneer DJ, Denon DJ or inMusic. We don&apos;t distribute
               firmware. Only upload music you have the rights to use.
             </p>
-            <nav aria-label="Footer" className="flex gap-4">
-              <Link href="/about" className="hover:text-foreground">About</Link>
-              <Link href="/status" className="hover:text-foreground">Status</Link>
-              <Link href="/about#privacy" className="hover:text-foreground">Privacy</Link>
-            </nav>
+            <div className="flex flex-col gap-2 sm:items-end">
+              <nav aria-label="Footer" className="flex gap-4">
+                <Link href="/about" className="hover:text-foreground">About</Link>
+                <Link href="/status" className="hover:text-foreground">Status</Link>
+                <Link href="/about#privacy" className="hover:text-foreground">Privacy</Link>
+              </nav>
+              <p className="flex items-center gap-2">
+                <CanadaFlag title="Canada" className="h-3 w-auto rounded-[2px]" />
+                Made in Canada
+              </p>
+              <BuildId />
+            </div>
           </div>
         </footer>
       </body>

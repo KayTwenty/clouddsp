@@ -10,13 +10,26 @@ export type ModFormat = "cdj3k";
 export const FORMATS = ["wav", "flac", "mp3"] as const;
 export type AudioFormat = (typeof FORMATS)[number];
 
-// Which drawing to show for a device. See app/ui/device-art.tsx.
+// Which drawing to show for a device. Each one follows that hardware's real
+// layout; models that share a layout share a drawing. See app/ui/device-art.tsx.
 export type DeviceArt =
-  | "player-touch"
-  | "player"
-  | "all-in-one"
-  | "all-in-one-4"
-  | "all-in-one-compact"
+  | "cdj-3000"
+  | "cdj-3000x"
+  | "cdj-2000nxs2"
+  | "cdj-2000nxs"
+  | "cdj-2000"
+  | "xdj-xz"
+  | "xdj-az"
+  | "xdj-rx3"
+  | "sc6000"
+  | "sc6000m"
+  | "sc5000"
+  | "sc5000m"
+  | "prime-4"
+  | "sc-live-4"
+  | "prime-2"
+  | "sc-live-2"
+  | "prime-go"
   | "daw"
   | "dj-software";
 
@@ -58,32 +71,32 @@ export const DEVICE_GROUPS: DeviceGroup[] = [
         output: "mod",
         modFormat: "cdj3k",
         note: "Native stems with cdj3k-mods, firmware 3.13 to 3.22. Drums, harmonics and vocals on the deck.",
-        art: "player-touch",
+        art: "cdj-3000",
       },
-      { id: "cdj-3000x", name: "CDJ-3000X", output: "tracks", note: NO_MOD_NOTE, art: "player-touch" },
-      { id: "cdj-2000nxs2", name: "CDJ-2000NXS2", output: "tracks", note: NO_MOD_NOTE, art: "player" },
-      { id: "cdj-2000nxs", name: "CDJ-2000NXS", output: "tracks", note: NO_MOD_NOTE, art: "player" },
-      { id: "cdj-2000", name: "CDJ-2000", output: "tracks", note: NO_MOD_NOTE, art: "player" },
+      { id: "cdj-3000x", name: "CDJ-3000X", output: "tracks", note: NO_MOD_NOTE, art: "cdj-3000x" },
+      { id: "cdj-2000nxs2", name: "CDJ-2000NXS2", output: "tracks", note: NO_MOD_NOTE, art: "cdj-2000nxs2" },
+      { id: "cdj-2000nxs", name: "CDJ-2000NXS", output: "tracks", note: NO_MOD_NOTE, art: "cdj-2000nxs" },
+      { id: "cdj-2000", name: "CDJ-2000", output: "tracks", note: NO_MOD_NOTE, art: "cdj-2000" },
       {
         id: "xdj-xz",
         name: "XDJ-XZ",
         output: "tracks",
         note: "Stems come as separate tracks for now. Native XZ Mods support is coming soon.",
-        art: "all-in-one-4",
+        art: "xdj-xz",
       },
       {
         id: "xdj-az",
         name: "XDJ-AZ",
         output: "tracks",
         note: "Stems come as separate tracks for now. Native AZ-MODS support is coming soon.",
-        art: "all-in-one-4",
+        art: "xdj-az",
       },
       {
         id: "xdj-rx3",
         name: "XDJ-RX3",
         output: "tracks",
         note: "Stems come as separate tracks for now. Native MOLE support is coming soon.",
-        art: "all-in-one",
+        art: "xdj-rx3",
       },
     ],
   },
@@ -91,17 +104,17 @@ export const DEVICE_GROUPS: DeviceGroup[] = [
     id: "denon",
     brand: "Denon DJ",
     devices: [
-      denon("SC6000", "player-touch"),
-      denon("SC6000M", "player-touch"),
-      denon("SC5000", "player-touch"),
-      denon("SC5000M", "player-touch"),
-      denon("Prime 4+", "all-in-one-4"),
-      denon("Prime 4", "all-in-one-4"),
-      denon("SC Live 4", "all-in-one-4"),
-      denon("Prime 2", "all-in-one"),
-      denon("SC Live 2", "all-in-one"),
-      denon("Prime Go+", "all-in-one-compact"),
-      denon("Prime Go", "all-in-one-compact"),
+      denon("SC6000", "sc6000"),
+      denon("SC6000M", "sc6000m"),
+      denon("SC5000", "sc5000"),
+      denon("SC5000M", "sc5000m"),
+      denon("Prime 4+", "prime-4"),
+      denon("Prime 4", "prime-4"),
+      denon("SC Live 4", "sc-live-4"),
+      denon("Prime 2", "prime-2"),
+      denon("SC Live 2", "sc-live-2"),
+      denon("Prime Go+", "prime-go"),
+      denon("Prime Go", "prime-go"),
     ],
   },
   {
