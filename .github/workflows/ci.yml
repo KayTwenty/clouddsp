@@ -16,7 +16,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
-      - run: npx tsc --noEmit
+      # typegen creates Next's route types (RouteContext, LayoutProps), which
+      # otherwise only exist after `next dev` or `next build`.
+      - run: npm run typecheck
       - run: npm run build
 
   worker:

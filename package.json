@@ -11,6 +11,7 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
     "worker": "uv run --no-project worker/start.py",
     "selfhost": "node scripts/selfhost.mjs"
   },
