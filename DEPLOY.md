@@ -70,19 +70,27 @@ and files on disk. `npm run dev` + `npm run worker` work with zero setup.
 
 ## 3. GPU workers
 
-On each GPU machine (needs `uv`, `ffmpeg` and an NVIDIA driver):
+On each GPU machine (needs `uv`, `ffmpeg` and an NVIDIA driver), pick the
+PyTorch build for the card. Newer CUDA builds dropped GTX 10-series support,
+so there are two:
 
-```bash
-cd worker && uv sync
-```
+| GPU | Build | Driver |
+|---|---|---|
+| GTX 10-series (Pascal) up to RTX 40-series | `cu126` | 560+ |
+| RTX 20-series up to RTX 50-series (Blackwell) | `cu128` | 570+ |
 
-Then run with the site URL and the same token:
+From the repository root:
 
 ```powershell
+uv sync --project worker --extra cu126
 $env:CLOUDDSP_URL = "https://YOUR-APP.vercel.app"
 $env:WORKER_TOKEN = "<the token>"
-uv run --project worker clouddsp-worker
+uv run --project worker --extra cu126 clouddsp-worker
 ```
+
+Use the same `--extra` in both commands. `npm run worker` (cu128) and
+`npm run worker:pascal` (cu126) are shortcuts for the second one. If the build
+doesn't support the card, the worker stops at startup and says which one to use.
 
 Run one worker per GPU. Any number can poll at once: jobs are claimed with
 `FOR UPDATE SKIP LOCKED`, and a job whose worker goes silent for two minutes is

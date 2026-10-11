@@ -9,7 +9,8 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
-    "worker": "uv run --project worker clouddsp-worker"
+    "worker": "uv run --project worker --extra cu128 clouddsp-worker",
+    "worker:pascal": "uv run --project worker --extra cu126 clouddsp-worker"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

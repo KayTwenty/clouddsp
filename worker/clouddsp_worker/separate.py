@@ -33,8 +33,37 @@ PRESETS = {
 _models: dict[str, torch.nn.Module] = {}
 
 
+def _cuda_supported() -> bool:
+    """Whether this PyTorch build has kernels for the installed NVIDIA GPU.
+
+    PyTorch only warns when it doesn't, then fails on the first job with
+    "no kernel image is available", so check up front.
+    """
+    major, minor = torch.cuda.get_device_capability()
+    for arch in torch.cuda.get_arch_list():  # e.g. "sm_61", "sm_120", "compute_90"
+        kind, _, digits = arch.partition("_")
+        if not digits.isdigit():
+            continue
+        a_major, a_minor = int(digits[:-1]), int(digits[-1])
+        if kind == "sm" and a_major == major and a_minor <= minor:
+            return True
+        # PTX can be compiled for any newer GPU.
+        if kind == "compute" and (a_major, a_minor) <= (major, minor):
+            return True
+    return False
+
+
 def pick_device() -> torch.device:
     if torch.cuda.is_available():
+        if not _cuda_supported():
+            name = torch.cuda.get_device_name()
+            major, minor = torch.cuda.get_device_capability()
+            fix = "cu126" if major < 7 else "cu128"
+            raise SystemExit(
+                f"{name} (compute {major}.{minor}) isn't supported by this PyTorch build "
+                f"(CUDA {torch.version.cuda}). Reinstall the worker with the matching build:\n"
+                f"  uv sync --project worker --extra {fix}"
+            )
         return torch.device("cuda")
     if hasattr(torch, "xpu") and torch.xpu.is_available():
         return torch.device("xpu")

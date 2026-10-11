@@ -9,9 +9,18 @@ dependencies = [
     "nvidia-ml-py>=13.615.71",
     "requests>=2.32",
     "soundfile>=0.12",
-    "torch>=2.7",
-    "torchaudio>=2.7",
+    "torch==2.11.*",
+    "torchaudio==2.11.*",
 ]
+
+# Pick the PyTorch build that matches the GPU (install with `uv sync --extra <name>`):
+#   cu126  GTX 10-series (Pascal) up to RTX 40-series. Needs NVIDIA driver 560+.
+#   cu128  RTX 20-series up to RTX 50-series (Blackwell). Needs driver 570+.
+# Newer PyTorch CUDA builds dropped Pascal, which is why there are two.
+[project.optional-dependencies]
+# torchaudio stopped at 2.11 and must match torch's version, so both are pinned to it.
+cu126 = ["torch==2.11.*", "torchaudio==2.11.*"]
+cu128 = ["torch==2.11.*", "torchaudio==2.11.*"]
 
 [project.scripts]
 clouddsp-worker = "clouddsp_worker.main:main"
@@ -20,9 +29,23 @@ clouddsp-worker = "clouddsp_worker.main:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.uv]
+conflicts = [[{ extra = "cu126" }, { extra = "cu128" }]]
+
 [tool.uv.sources]
-torch = { index = "pytorch-cu128" }
-torchaudio = { index = "pytorch-cu128" }
+torch = [
+    { index = "pytorch-cu126", extra = "cu126" },
+    { index = "pytorch-cu128", extra = "cu128" },
+]
+torchaudio = [
+    { index = "pytorch-cu126", extra = "cu126" },
+    { index = "pytorch-cu128", extra = "cu128" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cu128"
